@@ -1,0 +1,28 @@
+# Build results
+bin/
+obj/
+*.dll
+*.pdb
+*.exe
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Mac
+.DS_Store
+
+# Build artifacts
+*.zip
+*.deps.json
+
+# Temporary files
+*.tmp
+*.log
