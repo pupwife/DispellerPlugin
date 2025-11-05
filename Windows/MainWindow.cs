@@ -352,8 +352,14 @@ public class MainWindow : Window, IDisposable
                 return;
             }
 
+            // Deduplicate by Slot + ItemId to prevent duplicates from race conditions
+            var uniqueItems = dresserItems
+                .GroupBy(item => new { item.Slot, item.ItemId })
+                .Select(g => g.First())
+                .ToList();
+
             // Filter out items with unknown slots
-            var validItems = dresserItems
+            var validItems = uniqueItems
                 .Where(item => {
                     var slotName = GetSlotName(item.ItemId);
                     return !string.IsNullOrEmpty(slotName) && slotName != "Unknown Slot";
@@ -379,12 +385,9 @@ public class MainWindow : Window, IDisposable
                     var sortedItems = g
                         .OrderBy(item => GetItemModel(item.ItemId))
                         .Select(item => {
-                            // Get proper item name from Lumina if dresser name is empty
-                            var itemName = item.Name;
-                            if (string.IsNullOrWhiteSpace(itemName))
-                            {
-                                itemName = GetItemNameFromLumina(item.ItemId);
-                            }
+                            // Always get item name from Lumina for accuracy
+                            // Dresser name can be incorrect/outdated when dresser updates
+                            var itemName = GetItemNameFromLumina(item.ItemId);
                             
                             // Get icon - use from Lumina if dresser icon is invalid
                             var iconId = item.IconId;

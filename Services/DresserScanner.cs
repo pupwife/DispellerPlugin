@@ -43,7 +43,9 @@ public class DresserScanner : IDisposable
 
                 _cachedDresserItems.Add(new PrismBoxItem
                 {
-                    Name = item.Name.ToString(),
+                    // Don't store name from dresser data - it can be incorrect/outdated
+                    // Name will be retrieved from Lumina in MainWindow for accuracy
+                    Name = string.Empty,
                     Slot = item.Slot,
                     ItemId = item.ItemId,
                     IconId = item.IconId,
@@ -60,7 +62,8 @@ public class DresserScanner : IDisposable
     {
         lock (LockObject)
         {
-            return _cachedDresserItems;
+            // Return a snapshot copy to prevent race conditions if cache updates during scan
+            return new List<PrismBoxItem>(_cachedDresserItems);
         }
     }
 
