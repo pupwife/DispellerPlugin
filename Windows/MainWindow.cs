@@ -343,11 +343,41 @@ public class MainWindow : Window, IDisposable
 
         try
         {
+            // Check if we have cached data first (before trying to refresh)
+            int cachedCountBefore = DresserScanner.GetCachedItemCount();
+            bool hasCachedData = cachedCountBefore > 0;
+            
+            Plugin.Log.Information($"ScanDresser: Starting scan - cached items before refresh: {cachedCountBefore}");
+            
+            // Try to refresh the dresser data if it's currently open (to get latest data)
+            bool refreshed = false;
+            unsafe
+            {
+                refreshed = DresserScanner.TryRefresh();
+            }
+
+            int cachedCountAfter = DresserScanner.GetCachedItemCount();
             var dresserItems = DresserScanner.GetDresserItems();
+            
+            Plugin.Log.Information($"Dresser scan: Found {dresserItems.Count} items (cached before: {cachedCountBefore}, cached after: {cachedCountAfter}, refreshed: {refreshed})");
             
             if (dresserItems.Count == 0)
             {
-                statusMessage = "Your glamour dresser is empty or hasn't been opened!";
+                if (!hasCachedData && !refreshed)
+                {
+                    statusMessage = "Your glamour dresser hasn't been opened yet! Please open your Glamour Dresser at least once, then try again.";
+                    Plugin.Log.Warning("Dresser scan: No cached data and dresser not open");
+                }
+                else if (hasCachedData && !refreshed)
+                {
+                    statusMessage = "Using cached data, but dresser appears empty. Try opening the dresser to refresh.";
+                    Plugin.Log.Warning($"Dresser scan: Had {cachedCountBefore} cached items but got 0 after refresh attempt");
+                }
+                else
+                {
+                    statusMessage = "Your glamour dresser appears to be empty!";
+                    Plugin.Log.Warning("Dresser scan: Dresser is open but empty");
+                }
                 sharedGroups = null;
                 return;
             }
@@ -433,6 +463,7 @@ public class MainWindow : Window, IDisposable
         {
             statusMessage = $"Error: {ex.Message}";
             sharedGroups = null;
+            Plugin.Log.Error(ex, "Error during dresser scan");
         }
         finally
         {
